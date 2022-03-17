@@ -17,7 +17,7 @@
     "SharedArrayBuffer": "readonly"
   },
   "parserOptions": {
-    "project": "./tsconfig.json"
+    "project": "./tsconfig.json",
   },
   "rules": {
     "prettier/prettier": "error",
