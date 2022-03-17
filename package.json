@@ -10,10 +10,10 @@
     "/dist"
   ],
   "scripts": {
-    "format:check": "prettier --check \"src\" \"tests\"",
-    "format:fix": "prettier --write \"src\" \"tests\"",
-    "lint:check": "eslint --cache --ext .ts \"src\" \"tests\"",
-    "lint:fix": "eslint --cache --fix --ext .ts \"src\" \"tests\"",
+    "format:check": "prettier --check \"src\"",
+    "format:fix": "prettier --write \"src\"",
+    "lint:check": "eslint --cache --ext .ts \"src\"",
+    "lint:fix": "eslint --cache --fix --ext .ts \"src\"",
     "prepare": "yarn build && husky install",
     "build": "tsc -p tsconfig.json",
     "test": "jest"
