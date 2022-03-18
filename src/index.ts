@@ -65,6 +65,31 @@ export default class LedgerKeyring {
     return account.address;
   };
 
+  addAccounts = async (n = 1): Promise<string[]> => {
+    // The current immplemenation of LedgerKeyring only supports one account
+    if (this.accounts.length > 0 || n > 1) {
+      throw new Error("LedgerKeyring only supports one account");
+    }
+
+    const address = await this.unlock(this.hdPath);
+    this.accounts.push({
+      address,
+      hdPath: this.hdPath,
+    });
+
+    return this.getAccounts();
+  };
+
+  getDefaultAccount = async (): Promise<string> => {
+    let accounts = await this.getAccounts();
+
+    if (this.accounts.length === 0) {
+      accounts = await this.addAccounts(1);
+    }
+
+    return accounts[0];
+  };
+
   setTransport = (transport: Transport) => {
     this.app = new AppEth(transport);
   };
