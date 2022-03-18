@@ -113,6 +113,77 @@ describe("accounts", () => {
 
     expect(accounts).toEqual(["0x1", "0x2"]);
   });
+
+  test("adds an account to the state", async () => {
+    const keyring = new LedgerKeyring();
+
+    const mockApp = createMockApp({
+      getAddress: jest.fn(() =>
+        Promise.resolve({
+          address: "0xCbA98362e199c41E1864D0923AF9646d3A648451",
+          publicKey:
+            "04df00ad3869baad7ce54f4d560ba7f268d542df8f2679a5898d78a690c3db8f9833d2973671cb14b088e91bdf7c0ab00029a576473c0e12f84d252e630bb3809b",
+        })
+      ),
+    });
+
+    keyring.setApp(mockApp);
+
+    const accounts = await keyring.addAccounts(1);
+
+    expect(accounts).toHaveLength(1);
+    expect(accounts[0]).toEqual("0xCbA98362e199c41E1864D0923AF9646d3A648451");
+  });
+
+  test("throws when trying to add multiple accounts", async () => {
+    const keyring = new LedgerKeyring();
+
+    await expect(keyring.addAccounts(2)).rejects.toThrow(
+      "LedgerKeyring only supports one account"
+    );
+  });
+
+  test("throw when trying to add another account", async () => {
+    const keyring = new LedgerKeyring();
+
+    const mockApp = createMockApp({
+      getAddress: jest.fn(() =>
+        Promise.resolve({
+          address: "0xCbA98362e199c41E1864D0923AF9646d3A648451",
+          publicKey:
+            "04df00ad3869baad7ce54f4d560ba7f268d542df8f2679a5898d78a690c3db8f9833d2973671cb14b088e91bdf7c0ab00029a576473c0e12f84d252e630bb3809b",
+        })
+      ),
+    });
+
+    keyring.setApp(mockApp);
+
+    await keyring.addAccounts(1);
+
+    await expect(keyring.addAccounts(1)).rejects.toThrow(
+      "LedgerKeyring only supports one account"
+    );
+  });
+
+  test("retrieve the default account", async () => {
+    const keyring = new LedgerKeyring();
+
+    const mockApp = createMockApp({
+      getAddress: jest.fn(() =>
+        Promise.resolve({
+          address: "0xCbA98362e199c41E1864D0923AF9646d3A648451",
+          publicKey:
+            "04df00ad3869baad7ce54f4d560ba7f268d542df8f2679a5898d78a690c3db8f9833d2973671cb14b088e91bdf7c0ab00029a576473c0e12f84d252e630bb3809b",
+        })
+      ),
+    });
+
+    keyring.setApp(mockApp);
+
+    const account = await keyring.getDefaultAccount();
+
+    expect(account).toEqual("0xCbA98362e199c41E1864D0923AF9646d3A648451");
+  });
 });
 
 describe("unlock", () => {
