@@ -9,6 +9,13 @@ const createMockApp = (props: Partial<EthereumApp>): EthereumApp => {
           "04df00ad3869baad7ce54f4d560ba7f268d542df8f2679a5898d78a690c3db8f9833d2973671cb14b088e91bdf7c0ab00029a576473c0e12f84d252e630bb3809b",
       })
     ),
+    signTransaction: jest.fn(() =>
+      Promise.resolve({
+        s: "0x1",
+        v: "0x1",
+        r: "0x1",
+      })
+    ),
     ...props,
   };
 

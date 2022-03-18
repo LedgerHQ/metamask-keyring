@@ -40,7 +40,10 @@
     "*.ts": "yarn run lint:fix"
   },
   "dependencies": {
+    "@ethereumjs/tx": "^3.5.0",
     "@ledgerhq/hw-app-eth": "^6.26.1",
-    "@ledgerhq/hw-transport": "^6.24.1"
+    "@ledgerhq/hw-transport": "^6.24.1",
+    "buffer": "^6.0.3",
+    "ethereumjs-util": "^7.1.4"
   }
 }
