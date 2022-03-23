@@ -128,7 +128,7 @@ export default class LedgerKeyring {
     const txData = tx.toJSON();
 
     // The fromTxData utility expects a type to support transactions with a type other than 0
-    txData.type = parseInt(tx.type);
+    txData.type = `0x${tx.type}`;
 
     // The fromTxData utility expects v,r and s to be hex prefixed
     txData.v = addHexPrefix(v);
