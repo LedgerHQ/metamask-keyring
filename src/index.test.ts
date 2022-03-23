@@ -268,7 +268,7 @@ describe("signTransaction", () => {
     keyring.setApp(mockApp);
 
     const txData = {
-      data: "0x1a8451e600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      data: "0x",
       gasLimit: "0x02625a00",
       maxPriorityFeePerGas: "0x01",
       maxFeePerGas: "0xff",
