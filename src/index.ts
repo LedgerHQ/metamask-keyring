@@ -1,7 +1,14 @@
 import AppEth from "@ledgerhq/hw-app-eth";
 import Transport from "@ledgerhq/hw-transport";
+import ledgerService from "@ledgerhq/hw-app-eth/lib/services/ledger";
+import { LedgerEthTransactionResolution } from "@ledgerhq/hw-app-eth/lib/services/types";
+import { rlp, addHexPrefix } from "ethereumjs-util";
+import { TransactionFactory, TypedTransaction } from "@ethereumjs/tx";
 
-const hdPathString = `m/44'/60'/0`;
+// eslint-disable-next-line
+global.Buffer = require("buffer").Buffer;
+
+const hdPathString = `m/44'/60'/0'/0/0`;
 const type = "Ledger";
 
 type SerializationOptions = {
@@ -23,6 +30,16 @@ export interface EthereumApp {
     publicKey: string;
     address: string;
     chainCode?: string;
+  }>;
+
+  signTransaction(
+    path: string,
+    rawTxHex: string,
+    resolution?: LedgerEthTransactionResolution | null
+  ): Promise<{
+    s: string;
+    v: string;
+    r: string;
   }>;
 }
 export default class LedgerKeyring {
@@ -59,7 +76,7 @@ export default class LedgerKeyring {
   };
 
   unlock = async (hdPath: string): Promise<string> => {
-    const app = this.getApp();
+    const app = this._getApp();
     const account = await app.getAddress(hdPath, false, true);
 
     return account.address;
@@ -90,11 +107,53 @@ export default class LedgerKeyring {
     return accounts[0];
   };
 
+  signTransaction = async (address: string, tx: TypedTransaction) => {
+    const hdPath = this._getHDPathFromAddress(address);
+
+    // `getMessageToSign` will return valid RLP for all transaction types
+    const messageToSign = tx.getMessageToSign(false);
+
+    const rawTxHex = Buffer.isBuffer(messageToSign)
+      ? messageToSign.toString("hex")
+      : rlp.encode(messageToSign).toString("hex");
+
+    const resolution = await ledgerService.resolveTransaction(rawTxHex, {}, {});
+
+    const app = this._getApp();
+    const { r, s, v } = await app.signTransaction(hdPath, rawTxHex, resolution);
+
+    // Because tx will be immutable, first get a plain javascript object that
+    // represents the transaction. Using txData here as it aligns with the
+    // nomenclature of ethereumjs/tx.
+    const txData = tx.toJSON();
+
+    // The fromTxData utility expects a type to support transactions with a type other than 0
+    txData.type = `0x${tx.type}`;
+
+    // The fromTxData utility expects v,r and s to be hex prefixed
+    txData.v = addHexPrefix(v);
+    txData.r = addHexPrefix(r);
+    txData.s = addHexPrefix(s);
+
+    // Adopt the 'common' option from the original transaction and set the
+    // returned object to be frozen if the original is frozen.
+    const transaction = TransactionFactory.fromTxData(txData, {
+      common: tx.common,
+      freeze: Object.isFrozen(tx),
+    });
+
+    return transaction;
+  };
+
   setTransport = (transport: Transport) => {
     this.app = new AppEth(transport);
   };
 
-  getApp = (): EthereumApp => {
+  setApp = (app: EthereumApp): void => {
+    this.app = app;
+  };
+
+  private _getApp = (): EthereumApp => {
     if (!this.app) {
       throw new Error(
         "Ledger app is not initialized. You must call setTransport first."
@@ -104,7 +163,15 @@ export default class LedgerKeyring {
     return this.app;
   };
 
-  setApp = (app: EthereumApp): void => {
-    this.app = app;
+  private _getHDPathFromAddress = (address: string): string => {
+    const account = this.accounts.find(({ address: accAddress }) => {
+      return accAddress.toLowerCase() === address.toLowerCase();
+    });
+
+    if (!account) {
+      throw new Error(`Account not found for address: ${address}`);
+    }
+
+    return account.hdPath;
   };
 }
