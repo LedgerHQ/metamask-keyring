@@ -2,8 +2,14 @@ import AppEth from "@ledgerhq/hw-app-eth";
 import Transport from "@ledgerhq/hw-transport";
 import ledgerService from "@ledgerhq/hw-app-eth/lib/services/ledger";
 import { LedgerEthTransactionResolution } from "@ledgerhq/hw-app-eth/lib/services/types";
-import { rlp, addHexPrefix } from "ethereumjs-util";
+import {
+  rlp,
+  addHexPrefix,
+  stripHexPrefix,
+  toChecksumAddress,
+} from "ethereumjs-util";
 import { TransactionFactory, TypedTransaction } from "@ethereumjs/tx";
+import { recoverPersonalSignature } from "eth-sig-util";
 
 // eslint-disable-next-line
 global.Buffer = require("buffer").Buffer;
@@ -39,6 +45,15 @@ export interface EthereumApp {
   ): Promise<{
     s: string;
     v: string;
+    r: string;
+  }>;
+
+  signPersonalMessage(
+    path: string,
+    messageHex: string
+  ): Promise<{
+    v: number;
+    s: string;
     r: string;
   }>;
 }
@@ -143,6 +158,38 @@ export default class LedgerKeyring {
     });
 
     return transaction;
+  };
+
+  signMessage = async (address: string, message: string) =>
+    this.signPersonalMessage(address, message);
+
+  signPersonalMessage = async (address: string, message: string) => {
+    const hdPath = this._getHDPathFromAddress(address);
+    const messageWithoutHexPrefix = stripHexPrefix(message);
+
+    const app = this._getApp();
+    const { r, s, v } = await app.signPersonalMessage(
+      hdPath,
+      messageWithoutHexPrefix
+    );
+
+    let modifiedV = (v - 27).toString(16);
+
+    if (modifiedV.length < 2) {
+      modifiedV = addHexPrefix(modifiedV);
+    }
+
+    const signature = `0x${r}${s}${modifiedV}`;
+    const addressSignedWith = recoverPersonalSignature({
+      data: message,
+      sig: signature,
+    });
+
+    if (toChecksumAddress(addressSignedWith) !== toChecksumAddress(address)) {
+      throw new Error("Ledger: The signature doesn't match the right address");
+    }
+
+    return signature;
   };
 
   setTransport = (transport: Transport) => {
