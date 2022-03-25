@@ -52,6 +52,7 @@ export default class LedgerKeyring {
   private accounts: Account[] = [];
 
   private app?: EthereumApp;
+
   private transport?: Transport;
 
   constructor(opts: SerializationOptions = {}) {
