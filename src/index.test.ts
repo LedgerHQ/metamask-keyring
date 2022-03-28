@@ -306,7 +306,7 @@ describe("signTransaction", () => {
   });
 });
 
-describe.only("signMessage", () => {
+describe("signMessage", () => {
   test("should sign a message successfully", async () => {
     const keyring = new LedgerKeyring();
 
