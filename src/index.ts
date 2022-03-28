@@ -190,7 +190,7 @@ export default class LedgerKeyring {
       appName,
       version,
     };
-  }
+  };
 
   signMessage = async (address: string, message: string) =>
     this.signPersonalMessage(address, message);
