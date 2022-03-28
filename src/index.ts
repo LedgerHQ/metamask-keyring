@@ -224,6 +224,10 @@ export default class LedgerKeyring {
     return signature;
   };
 
+  forgetDevice = () => {
+    this.accounts = [];
+  };
+
   setTransport = (transport: Transport) => {
     this.transport = transport;
     this.app = new AppEth(transport);
