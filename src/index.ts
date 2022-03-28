@@ -68,6 +68,8 @@ export default class LedgerKeyring {
 
   private app?: EthereumApp;
 
+  private transport?: Transport;
+
   constructor(opts: SerializationOptions = {}) {
     void this.deserialize(opts);
   }
@@ -123,6 +125,7 @@ export default class LedgerKeyring {
   };
 
   signTransaction = async (address: string, tx: TypedTransaction) => {
+    const app = this._getApp();
     const hdPath = this._getHDPathFromAddress(address);
 
     // `getMessageToSign` will return valid RLP for all transaction types
@@ -134,7 +137,6 @@ export default class LedgerKeyring {
 
     const resolution = await ledgerService.resolveTransaction(rawTxHex, {}, {});
 
-    const app = this._getApp();
     const { r, s, v } = await app.signTransaction(hdPath, rawTxHex, resolution);
 
     // Because tx will be immutable, first get a plain javascript object that
@@ -158,6 +160,36 @@ export default class LedgerKeyring {
     });
 
     return transaction;
+  };
+
+  getAppAndVersion = async (): Promise<{
+    appName: string;
+    version: string;
+  }> => {
+    if (!this.transport) {
+      throw new Error(
+        "Ledger transport is not initialized. You must call setTransport first."
+      );
+    }
+
+    const response = await this.transport.send(0xb0, 0x01, 0x00, 0x00);
+
+    let i = 0;
+    const format = response[i++];
+
+    if (format !== 1) {
+      throw new Error("getAppAndVersion: format not supported");
+    }
+
+    const nameLength = response[i++];
+    const appName = response.slice(i, (i += nameLength)).toString("ascii");
+    const versionLength = response[i++];
+    const version = response.slice(i, (i += versionLength)).toString("ascii");
+
+    return {
+      appName,
+      version,
+    };
   };
 
   signMessage = async (address: string, message: string) =>
@@ -193,6 +225,7 @@ export default class LedgerKeyring {
   };
 
   setTransport = (transport: Transport) => {
+    this.transport = transport;
     this.app = new AppEth(transport);
   };
 
