@@ -208,7 +208,7 @@ export default class LedgerKeyring {
     let modifiedV = (v - 27).toString(16);
 
     if (modifiedV.length < 2) {
-      modifiedV = addHexPrefix(modifiedV);
+      modifiedV = `0${modifiedV}`;
     }
 
     const signature = `0x${r}${s}${modifiedV}`;

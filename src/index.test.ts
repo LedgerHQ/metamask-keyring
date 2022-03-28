@@ -306,6 +306,50 @@ describe("signTransaction", () => {
   });
 });
 
+describe("signMessage", () => {
+  test("should sign a message successfully", async () => {
+    const keyring = new LedgerKeyring();
+
+    const mockApp = createMockApp({
+      getAddress: jest.fn(() =>
+        Promise.resolve({
+          address: "0x9e10effa844d7399cdc555613b23a8499e04e386",
+          publicKey:
+            "04df00ad3869baad7ce54f4d560ba7f268d542df8f2679a5898d78a690c3db8f9833d2973671cb14b088e91bdf7c0ab00029a576473c0e12f84d252e630bb3809b",
+        })
+      ),
+      signPersonalMessage: jest.fn(() =>
+        Promise.resolve({
+          v: 27,
+          r: "afb6e247b1c490e284053c87ab5f6b59e219d51f743f7a4d83e400782bc7e4b9",
+          s: "479a268e0e0acd4de3f1e28e4fac2a6b32a4195e8dfa9d19147abe8807aa6f64",
+        })
+      ),
+    });
+
+    await keyring.deserialize({
+      hdPath: "m/44'/60'/0'/0/0",
+      accounts: [
+        {
+          address: "0x9e10effa844d7399cdc555613b23a8499e04e386",
+          hdPath: "m/44'/60'/0'/0/0",
+        },
+      ],
+    });
+
+    keyring.setApp(mockApp);
+
+    const signature = await keyring.signPersonalMessage(
+      "0x9e10effa844d7399cdc555613b23a8499e04e386",
+      Buffer.from("Sign Personal Message Test").toString("hex")
+    );
+
+    expect(signature).toEqual(
+      "0xafb6e247b1c490e284053c87ab5f6b59e219d51f743f7a4d83e400782bc7e4b9479a268e0e0acd4de3f1e28e4fac2a6b32a4195e8dfa9d19147abe8807aa6f6400"
+    );
+  });
+});
+
 describe("forgetDevice", () => {
   test("sets empty account after forget device", async () => {
     const keyring = new LedgerKeyring();
