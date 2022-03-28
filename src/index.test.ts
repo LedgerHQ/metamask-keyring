@@ -305,3 +305,22 @@ describe("signTransaction", () => {
     });
   });
 });
+
+describe("forgetDevice", () => {
+  test("sets empty account after forget device", async () => {
+    const keyring = new LedgerKeyring();
+
+    await keyring.deserialize({
+      hdPath: "m/44'/60'/0'/0/0",
+      accounts: [
+        { address: "0x1", hdPath: "m/44'/60'/0'/0/0" },
+        { address: "0x2", hdPath: "m/44'/60'/1'/0/0" },
+      ],
+    });
+
+    keyring.forgetDevice();
+    const accounts = await keyring.getAccounts();
+
+    expect(accounts).toEqual([]);
+  });
+});
