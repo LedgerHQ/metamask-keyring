@@ -55,6 +55,7 @@ describe("serialization", () => {
     expect(serialized).toEqual({
       hdPath: "m/44'/60'/0'/0/0",
       accounts: [],
+      deviceId: "",
     });
   });
 
@@ -65,6 +66,7 @@ describe("serialization", () => {
         { address: "0x1", hdPath: "m/44'/60'/0'/0/0" },
         { address: "0x2", hdPath: "m/44'/60'/1'/0/0" },
       ],
+      deviceId: "device_1",
     });
 
     const serialized = await keyring.serialize();
@@ -75,6 +77,7 @@ describe("serialization", () => {
         { address: "0x1", hdPath: "m/44'/60'/0'/0/0" },
         { address: "0x2", hdPath: "m/44'/60'/1'/0/0" },
       ],
+      deviceId: "device_1",
     });
   });
 
@@ -87,6 +90,7 @@ describe("serialization", () => {
         { address: "0x1", hdPath: "m/44'/60'/0'/0/0" },
         { address: "0x2", hdPath: "m/44'/60'/1'/0/0" },
       ],
+      deviceId: "device_1",
     });
 
     const serialized = await keyring.serialize();
@@ -97,6 +101,7 @@ describe("serialization", () => {
         { address: "0x1", hdPath: "m/44'/60'/0'/0/0" },
         { address: "0x2", hdPath: "m/44'/60'/1'/0/0" },
       ],
+      deviceId: "device_1",
     });
   });
 
@@ -110,6 +115,7 @@ describe("serialization", () => {
     expect(serialized).toEqual({
       hdPath: "m/44'/60'/0'/0/0",
       accounts: [],
+      deviceId: "",
     });
   });
 });
@@ -132,6 +138,7 @@ describe("accounts", () => {
         { address: "0x1", hdPath: "m/44'/60'/0'/0/0" },
         { address: "0x2", hdPath: "m/44'/60'/1'/0/0" },
       ],
+      deviceId: "device_1",
     });
 
     const accounts = await keyring.getAccounts();
@@ -270,6 +277,7 @@ describe("signTransaction", () => {
           hdPath: "m/44'/60'/0'/0/0",
         },
       ],
+      deviceId: "device_1",
     });
 
     keyring.setApp(mockApp);
@@ -335,6 +343,7 @@ describe("signMessage", () => {
           hdPath: "m/44'/60'/0'/0/0",
         },
       ],
+      deviceId: "device_1",
     });
 
     keyring.setApp(mockApp);
@@ -360,6 +369,7 @@ describe("forgetDevice", () => {
         { address: "0x1", hdPath: "m/44'/60'/0'/0/0" },
         { address: "0x2", hdPath: "m/44'/60'/1'/0/0" },
       ],
+      deviceId: "device_1",
     });
 
     keyring.forgetDevice();

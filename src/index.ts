@@ -20,6 +20,7 @@ const type = "Ledger";
 type SerializationOptions = {
   hdPath?: string;
   accounts?: Account[];
+  deviceId?: string;
 };
 
 type Account = {
@@ -64,6 +65,8 @@ export default class LedgerKeyring {
 
   private hdPath: string = hdPathString;
 
+  private deviceId = "";
+
   private accounts: Account[] = [];
 
   private app?: EthereumApp;
@@ -78,12 +81,14 @@ export default class LedgerKeyring {
   serialize = async (): Promise<SerializationOptions> => ({
     hdPath: this.hdPath,
     accounts: this.accounts,
+    deviceId: this.deviceId,
   });
 
   // eslint-disable-next-line @typescript-eslint/require-await
   deserialize = async (opts: SerializationOptions): Promise<void> => {
     this.hdPath = opts.hdPath || hdPathString;
     this.accounts = opts.accounts || [];
+    this.deviceId = opts.deviceId || "";
   };
 
   // eslint-disable-next-line @typescript-eslint/require-await
@@ -226,9 +231,14 @@ export default class LedgerKeyring {
 
   forgetDevice = () => {
     this.accounts = [];
+    this.deviceId = "";
   };
 
-  setTransport = (transport: Transport) => {
+  setTransport = (transport: Transport, deviceId: string) => {
+    if (this.deviceId && this.deviceId !== deviceId) {
+      throw new Error("LedgerKeyring: deviceId mismatch.");
+    }
+
     this.transport = transport;
     this.app = new AppEth(transport);
   };
