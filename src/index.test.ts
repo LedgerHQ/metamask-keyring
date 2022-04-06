@@ -366,6 +366,118 @@ describe("signMessage", () => {
   });
 });
 
+describe("signTypedMessage", () => {
+  test("Should sign a v4 typed message successfully", async () => {
+    const keyring = new LedgerKeyring();
+    const mockApp = createMockApp({
+      getAddress: jest.fn(() =>
+        Promise.resolve({
+          address: "0xe908e4378431418759b4f87b4bf7966e8aaa5cf2",
+          publicKey:
+            "04df00ad3869baad7ce54f4d560ba7f268d542df8f2679a5898d78a690c3db8f9833d2973671cb14b088e91bdf7c0ab00029a576473c0e12f84d252e630bb3809b",
+        })
+      ),
+      signEIP712HashedMessage: jest.fn(() =>
+        Promise.resolve({
+          v: 27,
+          r: "afb6e247b1c490e284053c87ab5f6b59e219d51f743f7a4d83e400782bc7e4b9",
+          s: "479a268e0e0acd4de3f1e28e4fac2a6b32a4195e8dfa9d19147abe8807aa6f64",
+        })
+      ),
+    });
+
+    await keyring.deserialize({
+      hdPath: "m/44'/60'/0'/0/0",
+      accounts: [
+        {
+          address: "0xe908e4378431418759b4f87b4bf7966e8aaa5cf2",
+          hdPath: "m/44'/60'/0'/0/0",
+        },
+      ],
+      deviceId: "device_1",
+    });
+
+    keyring.setApp(mockApp);
+
+    const signature = await keyring.signTypedMessage(
+      "0xe908e4378431418759b4f87b4bf7966e8aaa5cf2",
+      JSON.stringify({
+        domain: {
+          // Defining the chain aka Rinkeby testnet or Ethereum Main Net
+          chainId: 1,
+          // Give a user friendly name to the specific contract you are signing for.
+          name: "Ether Mail",
+          // If name isn't enough add verifying contract to make sure you are establishing contracts with the proper entity
+          verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
+          // Just let's you know the latest version. Definitely make sure the field name is correct.
+          version: "1",
+        },
+
+        // Defining the message signing data content.
+        message: {
+          /*
+           - Anything you want. Just a JSON Blob that encodes the data you want to send
+           - No required fields
+           - This is DApp Specific
+           - Be as explicit as possible when building out the message schema.
+          */
+          contents: "Hello, Bob!",
+          attachedMoneyInEth: 4.2,
+          from: {
+            name: "Cow",
+            wallets: [
+              "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826",
+              "0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF",
+            ],
+          },
+          to: [
+            {
+              name: "Bob",
+              wallets: [
+                "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB",
+                "0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57",
+                "0xB0B0b0b0b0b0B000000000000000000000000000",
+              ],
+            },
+          ],
+        },
+        // Refers to the keys of the *types* object below.
+        primaryType: "Mail",
+        types: {
+          // TODO: Clarify if EIP712Domain refers to the domain the contract is hosted on
+          EIP712Domain: [
+            { name: "name", type: "string" },
+            { name: "version", type: "string" },
+            { name: "chainId", type: "uint256" },
+            { name: "verifyingContract", type: "address" },
+          ],
+          // Not an EIP712Domain definition
+          Group: [
+            { name: "name", type: "string" },
+            { name: "members", type: "Person[]" },
+          ],
+          // Refer to PrimaryType
+          Mail: [
+            { name: "from", type: "Person" },
+            { name: "to", type: "Person[]" },
+            { name: "contents", type: "string" },
+          ],
+          // Not an EIP712Domain definition
+          Person: [
+            { name: "name", type: "string" },
+            { name: "wallets", type: "address[]" },
+          ],
+        },
+      }),
+      { version: "V4" }
+    );
+
+    expect(signature).toEqual(
+      "0xafb6e247b1c490e284053c87ab5f6b59e219d51f743f7a4d83e400782bc7e4b9479a268e0e0acd4de3f1e28e4fac2a6b32a4195e8dfa9d19147abe8807aa6f6400"
+    );
+  });
+});
+
 describe("forgetDevice", () => {
   test("sets empty account after forget device", async () => {
     const keyring = new LedgerKeyring();

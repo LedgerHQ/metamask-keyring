@@ -300,10 +300,10 @@ export default class LedgerKeyring {
     const signature = `0x${r}${s}${modifiedV}`;
 
     const addressSignedWith = recoverTypedSignature_v4({
-      data,
+      data: JSON.parse(data) as TypedMessage<MessageTypes>,
       sig: signature,
     });
-
+    console.log("addresSignedWith", addressSignedWith);
     if (toChecksumAddress(addressSignedWith) !== toChecksumAddress(address)) {
       throw new Error("Ledger: The signature doesnt match the right address");
     }
