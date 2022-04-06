@@ -34,6 +34,13 @@ const createMockApp = (props: Partial<EthereumApp>): EthereumApp => {
         r: "0x3",
       })
     ),
+    signEIP712HashedMessage: jest.fn(() =>
+      Promise.resolve({
+        s: "0x1",
+        v: 2,
+        r: "0x3",
+      })
+    ),
     ...props,
   };
 
