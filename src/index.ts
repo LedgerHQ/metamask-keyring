@@ -128,12 +128,18 @@ export default class LedgerKeyring {
   };
 
   addAccounts = async (n = 1): Promise<string[]> => {
+    const address = await this.unlock(this.hdPath);
+
     // The current immplemenation of LedgerKeyring only supports one account
-    if (this.accounts.length > 0 || n > 1) {
+    if (n > 1) {
       throw new Error("LedgerKeyring only supports one account");
     }
 
-    const address = await this.unlock(this.hdPath);
+    if (this.accounts.length > 0) {
+      // Just return the already imported account
+      return this.getAccounts();
+    }
+
     this.accounts.push({
       address,
       hdPath: this.hdPath,
