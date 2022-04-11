@@ -274,7 +274,7 @@ describe("signMessage", () => {
         expect(signature).toEqual("0xafb6e247b1c490e284053c87ab5f6b59e219d51f743f7a4d83e400782bc7e4b9479a268e0e0acd4de3f1e28e4fac2a6b32a4195e8dfa9d19147abe8807aa6f6400");
     }));
 });
-describe("signTypedMessage", () => {
+describe("signTypedData", () => {
     test("signs a v4 typed message successfully", () => __awaiter(void 0, void 0, void 0, function* () {
         const keyring = new index_1.default();
         const mockApp = createMockApp({
@@ -299,25 +299,14 @@ describe("signTypedMessage", () => {
             deviceId: "device_1",
         });
         keyring.setApp(mockApp);
-        const signature = yield keyring.signTypedMessage("0xe908e4378431418759b4f87b4bf7966e8aaa5cf2", JSON.stringify({
+        const signature = yield keyring.signTypedData("0xe908e4378431418759b4f87b4bf7966e8aaa5cf2", JSON.stringify({
             domain: {
-                // Defining the chain aka Rinkeby testnet or Ethereum Main Net
                 chainId: 1,
-                // Give a user friendly name to the specific contract you are signing for.
                 name: "Ether Mail",
-                // If name isn't enough add verifying contract to make sure you are establishing contracts with the proper entity
                 verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
-                // Just let's you know the latest version. Definitely make sure the field name is correct.
                 version: "1",
             },
-            // Defining the message signing data content.
             message: {
-                /*
-                 - Anything you want. Just a JSON Blob that encodes the data you want to send
-                 - No required fields
-                 - This is DApp Specific
-                 - Be as explicit as possible when building out the message schema.
-                */
                 contents: "Hello, Bob!",
                 attachedMoneyInEth: 4.2,
                 from: {
@@ -338,28 +327,23 @@ describe("signTypedMessage", () => {
                     },
                 ],
             },
-            // Refers to the keys of the *types* object below.
             primaryType: "Mail",
             types: {
-                // TODO: Clarify if EIP712Domain refers to the domain the contract is hosted on
                 EIP712Domain: [
                     { name: "name", type: "string" },
                     { name: "version", type: "string" },
                     { name: "chainId", type: "uint256" },
                     { name: "verifyingContract", type: "address" },
                 ],
-                // Not an EIP712Domain definition
                 Group: [
                     { name: "name", type: "string" },
                     { name: "members", type: "Person[]" },
                 ],
-                // Refer to PrimaryType
                 Mail: [
                     { name: "from", type: "Person" },
                     { name: "to", type: "Person[]" },
                     { name: "contents", type: "string" },
                 ],
-                // Not an EIP712Domain definition
                 Person: [
                     { name: "name", type: "string" },
                     { name: "wallets", type: "address[]" },

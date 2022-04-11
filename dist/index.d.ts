@@ -35,12 +35,14 @@ export interface EthereumApp {
 export default class LedgerKeyring {
     static readonly type = "Ledger";
     readonly type = "Ledger";
+    accounts: Account[];
+    private name;
     private hdPath;
     private deviceId;
-    private accounts;
     private app?;
     private transport?;
     constructor(opts?: SerializationOptions);
+    getName: () => string;
     serialize: () => Promise<SerializationOptions>;
     deserialize: (opts: SerializationOptions) => Promise<void>;
     getAccounts: () => Promise<string[]>;
@@ -55,7 +57,7 @@ export default class LedgerKeyring {
     }>;
     signMessage: (address: string, message: string) => Promise<string>;
     signPersonalMessage: (address: string, message: string) => Promise<string>;
-    signTypedMessage: (address: string, data: string, { version }: {
+    signTypedData: (address: string, data: string, { version }: {
         version: string;
     }) => Promise<string>;
     forgetDevice: () => void;

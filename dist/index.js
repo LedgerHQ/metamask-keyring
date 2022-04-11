@@ -24,9 +24,10 @@ const type = "Ledger";
 class LedgerKeyring {
     constructor(opts = {}) {
         this.type = type;
+        this.accounts = [];
         this.hdPath = hdPathString;
         this.deviceId = "";
-        this.accounts = [];
+        this.getName = () => this.name;
         // eslint-disable-next-line @typescript-eslint/require-await
         this.serialize = () => __awaiter(this, void 0, void 0, function* () {
             return ({
@@ -145,7 +146,7 @@ class LedgerKeyring {
             }
             return signature;
         });
-        this.signTypedMessage = (address, data, { version }) => __awaiter(this, void 0, void 0, function* () {
+        this.signTypedData = (address, data, { version }) => __awaiter(this, void 0, void 0, function* () {
             const app = this._getApp();
             const isV4 = version === "V4";
             if (!isV4) {
@@ -165,7 +166,6 @@ class LedgerKeyring {
                 data: JSON.parse(data),
                 sig: signature,
             });
-            console.log("addresSignedWith", addressSignedWith);
             if ((0, ethereumjs_util_1.toChecksumAddress)(addressSignedWith) !== (0, ethereumjs_util_1.toChecksumAddress)(address)) {
                 throw new Error("Ledger: The signature doesnt match the right address");
             }
@@ -200,6 +200,7 @@ class LedgerKeyring {
             }
             return account.hdPath;
         };
+        this.name = "Ledger";
         void this.deserialize(opts);
     }
 }
