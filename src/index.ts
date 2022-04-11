@@ -264,7 +264,7 @@ export default class LedgerKeyring {
     return signature;
   };
 
-  signTypedMessage = async (
+  signTypedData = async (
     address: string,
     data: string,
     { version }: { version: string }
@@ -315,7 +315,6 @@ export default class LedgerKeyring {
       data: JSON.parse(data) as TypedMessage<MessageTypes>,
       sig: signature,
     });
-    console.log("addresSignedWith", addressSignedWith);
     if (toChecksumAddress(addressSignedWith) !== toChecksumAddress(address)) {
       throw new Error("Ledger: The signature doesnt match the right address");
     }
