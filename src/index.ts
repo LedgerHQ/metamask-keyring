@@ -9,7 +9,13 @@ import {
   toChecksumAddress,
 } from "ethereumjs-util";
 import { TransactionFactory, TypedTransaction } from "@ethereumjs/tx";
-import { recoverPersonalSignature } from "eth-sig-util";
+import {
+  MessageTypes,
+  recoverPersonalSignature,
+  recoverTypedSignature_v4,
+  TypedDataUtils,
+  TypedMessage,
+} from "eth-sig-util";
 
 // eslint-disable-next-line
 global.Buffer = require("buffer").Buffer;
@@ -27,7 +33,6 @@ type Account = {
   address: string;
   hdPath: string;
 };
-
 export interface EthereumApp {
   getAddress(
     path: string,
@@ -52,6 +57,16 @@ export interface EthereumApp {
   signPersonalMessage(
     path: string,
     messageHex: string
+  ): Promise<{
+    v: number;
+    s: string;
+    r: string;
+  }>;
+
+  signEIP712HashedMessage(
+    path: string,
+    domainSeparatorHex: string,
+    hashStructMessageHex: string
   ): Promise<{
     v: number;
     s: string;
@@ -95,6 +110,14 @@ export default class LedgerKeyring {
   getAccounts = async (): Promise<string[]> => {
     const addresses = this.accounts.map(({ address }) => address);
     return addresses;
+  };
+
+  managesAccount = async (address: string): Promise<boolean> => {
+    const accounts = await this.getAccounts();
+    return accounts.some(
+      (managedAddress) =>
+        managedAddress.toLocaleLowerCase() === address.toLocaleLowerCase()
+    );
   };
 
   unlock = async (hdPath: string): Promise<string> => {
@@ -224,6 +247,65 @@ export default class LedgerKeyring {
 
     if (toChecksumAddress(addressSignedWith) !== toChecksumAddress(address)) {
       throw new Error("Ledger: The signature doesn't match the right address");
+    }
+
+    return signature;
+  };
+
+  signTypedMessage = async (
+    address: string,
+    data: string,
+    { version }: { version: string }
+  ) => {
+    const app = this._getApp();
+
+    const isV4 = version === "V4";
+    if (!isV4) {
+      throw new Error(
+        "Ledger: Only version 4 of typed data signing is supported"
+      );
+    }
+
+    const { domain, types, primaryType, message } = TypedDataUtils.sanitizeData(
+      JSON.parse(data) as TypedMessage<MessageTypes>
+    );
+
+    const domainSeparatorHex = TypedDataUtils.hashStruct(
+      "EIP712Domain",
+      domain,
+      types,
+      true
+    ).toString("hex");
+
+    const hashStructMessageHex = TypedDataUtils.hashStruct(
+      primaryType as string,
+      message,
+      types,
+      true
+    ).toString("hex");
+
+    const hdPath = this._getHDPathFromAddress(address);
+    const { r, s, v } = await app.signEIP712HashedMessage(
+      hdPath,
+      domainSeparatorHex,
+      hashStructMessageHex
+    );
+
+    let modifiedV = (v - 27).toString(16);
+
+    if (modifiedV.length < 2) {
+      modifiedV = `0${modifiedV}`;
+    }
+
+    const signature = `0x${r}${s}${modifiedV}`;
+
+    const addressSignedWith = recoverTypedSignature_v4({
+      data: JSON.parse(data) as TypedMessage<MessageTypes>,
+      sig: signature,
+    });
+    console.log("addresSignedWith", addressSignedWith);
+    if (toChecksumAddress(addressSignedWith) !== toChecksumAddress(address)) {
+      throw new Error("Ledger: The signature doesnt match the right address");
     }
 
     return signature;
