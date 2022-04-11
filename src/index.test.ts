@@ -367,7 +367,7 @@ describe("signMessage", () => {
 });
 
 describe("signTypedMessage", () => {
-  test("Should sign a v4 typed message successfully", async () => {
+  test("signs a v4 typed message successfully", async () => {
     const keyring = new LedgerKeyring();
     const mockApp = createMockApp({
       getAddress: jest.fn(() =>
