@@ -78,19 +78,25 @@ export default class LedgerKeyring {
 
   public readonly type = type;
 
+  public accounts: Account[] = [];
+
+  private name: string;
+
   private hdPath: string = hdPathString;
 
   private deviceId = "";
-
-  private accounts: Account[] = [];
 
   private app?: EthereumApp;
 
   private transport?: Transport;
 
   constructor(opts: SerializationOptions = {}) {
+    this.name = "Ledger";
+
     void this.deserialize(opts);
   }
+
+  getName = () => this.name;
 
   // eslint-disable-next-line @typescript-eslint/require-await
   serialize = async (): Promise<SerializationOptions> => ({
