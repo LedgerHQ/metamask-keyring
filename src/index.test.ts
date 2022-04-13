@@ -421,7 +421,6 @@ describe("signTypedData", () => {
           verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
           version: "1",
         },
-
         message: {
           contents: "Hello, Bob!",
           attachedMoneyInEth: 4.2,
