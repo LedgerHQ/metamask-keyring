@@ -1,5 +1,6 @@
 import LedgerKeyring, { EthereumApp } from "./index";
 import { FeeMarketEIP1559Transaction } from "@ethereumjs/tx";
+import Transport from "@ledgerhq/hw-transport";
 
 jest.mock("@ledgerhq/hw-app-eth/lib/services/ledger", () => ({
   resolveTransaction: () =>
@@ -492,5 +493,39 @@ describe("forgetDevice", () => {
     const accounts = await keyring.getAccounts();
 
     expect(accounts).toEqual([]);
+  });
+});
+
+describe("setTransport", () => {
+  test("throws if deviceId mismatches", () => {
+    const keyring = new LedgerKeyring({
+      hdPath: "m/44'/60'/0'/0/0",
+      accounts: [
+        { address: "0x1", hdPath: "m/44'/60'/0'/0/0" },
+        { address: "0x2", hdPath: "m/44'/60'/1'/0/0" },
+      ],
+      deviceId: "device_1",
+    });
+
+    const trans = new Transport();
+
+    expect(() => keyring.setTransport(trans, "device_2")).toThrow(
+      "LedgerKeyring: deviceId mismatch."
+    );
+  });
+
+  test("sets the transport without errors", () => {
+    const keyring = new LedgerKeyring({
+      hdPath: "m/44'/60'/0'/0/0",
+      accounts: [
+        { address: "0x1", hdPath: "m/44'/60'/0'/0/0" },
+        { address: "0x2", hdPath: "m/44'/60'/1'/0/0" },
+      ],
+      deviceId: "device_1",
+    });
+
+    const trans = new Transport();
+
+    expect(() => keyring.setTransport(trans, "device_1")).not.toThrow();
   });
 });
