@@ -1,5 +1,6 @@
-import LedgerKeyring, { EthereumApp } from "./index";
+import Transport from "@ledgerhq/hw-transport";
 import { FeeMarketEIP1559Transaction } from "@ethereumjs/tx";
+import LedgerKeyring, { EthereumApp } from "./index";
 
 jest.mock("@ledgerhq/hw-app-eth/lib/services/ledger", () => ({
   resolveTransaction: () =>
@@ -491,5 +492,80 @@ describe("forgetDevice", () => {
     const accounts = await keyring.getAccounts();
 
     expect(accounts).toEqual([]);
+  });
+});
+
+describe("setTransport", () => {
+  test("throws if deviceId mismatches", () => {
+    const keyring = new LedgerKeyring({
+      deviceId: "device_1",
+    });
+
+    const trans = new Transport();
+    const anotherDevice = "device_2";
+    expect(() => keyring.setTransport(trans, anotherDevice)).toThrow(
+      "LedgerKeyring: deviceId mismatch."
+    );
+  });
+
+  test("sets the transport without errors", () => {
+    const deviceId = "device_1";
+    const keyring = new LedgerKeyring({ deviceId });
+
+    const trans = new Transport();
+
+    expect(() => keyring.setTransport(trans, deviceId)).not.toThrow();
+  });
+});
+
+describe("openEthApp", () => {
+  test("throws if there is no transport set", () => {
+    const keyring = new LedgerKeyring();
+
+    expect(() => keyring.openEthApp()).toThrow(
+      "Ledger transport is not initialized. You must call setTransport first."
+    );
+  });
+
+  test("opens eth app", async () => {
+    const deviceId = "device_1";
+    const keyring = new LedgerKeyring({ deviceId });
+
+    const sendFn = jest.fn(() => Promise.resolve(Buffer.from([])));
+    const transport = new Transport();
+    transport.send = sendFn;
+    keyring.setTransport(transport, deviceId);
+    await keyring.openEthApp();
+
+    expect(sendFn).toBeCalledWith(
+      0xe0,
+      0xd8,
+      0x00,
+      0x00,
+      Buffer.from("Ethereum", "ascii")
+    );
+  });
+});
+
+describe("quitApp", () => {
+  test("throws if there is no transport set", () => {
+    const keyring = new LedgerKeyring();
+
+    expect(() => keyring.quitApp()).toThrow(
+      "Ledger transport is not initialized. You must call setTransport first."
+    );
+  });
+
+  test("quits app", async () => {
+    const deviceId = "device_1";
+    const keyring = new LedgerKeyring({ deviceId });
+
+    const sendFn = jest.fn(() => Promise.resolve(Buffer.from([])));
+    const transport = new Transport();
+    transport.send = sendFn;
+    keyring.setTransport(transport, deviceId);
+    await keyring.quitApp();
+
+    expect(sendFn).toBeCalledWith(0xb0, 0xa7, 0x00, 0x00);
   });
 });
