@@ -78,13 +78,13 @@ export default class LedgerKeyring {
 
   public readonly type = type;
 
+  public deviceId = "";
+
   public accounts: Account[] = [];
 
   private name: string;
 
   private hdPath: string = hdPathString;
-
-  private deviceId = "";
 
   private app?: EthereumApp;
 
@@ -332,6 +332,7 @@ export default class LedgerKeyring {
       throw new Error("LedgerKeyring: deviceId mismatch.");
     }
 
+    this.deviceId = deviceId;
     this.transport = transport;
     this.app = new AppEth(transport);
   };
