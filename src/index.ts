@@ -341,6 +341,32 @@ export default class LedgerKeyring {
     this.app = app;
   };
 
+  openEthApp = (): Promise<Buffer> => {
+    if (!this.transport) {
+      throw new Error(
+        "Ledger transport is not initialized. You must call setTransport first."
+      );
+    }
+
+    return this.transport.send(
+      0xe0,
+      0xd8,
+      0x00,
+      0x00,
+      Buffer.from("Ethereum", "ascii")
+    );
+  };
+
+  quitApp = (): Promise<Buffer> => {
+    if (!this.transport) {
+      throw new Error(
+        "Ledger transport is not initialized. You must call setTransport first."
+      );
+    }
+
+    return this.transport.send(0xb0, 0xa7, 0x00, 0x00);
+  };
+
   private _getApp = (): EthereumApp => {
     if (!this.app) {
       throw new Error(
