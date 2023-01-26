@@ -106,7 +106,7 @@ export default class LedgerKeyring {
   });
 
   // eslint-disable-next-line @typescript-eslint/require-await
-  deserialize = async (opts: SerializationOptions): Promise<void> => {
+  deserialize = async (opts: SerializationOptions = {}): Promise<void> => {
     this.hdPath = opts.hdPath || hdPathString;
     this.accounts = opts.accounts || [];
     this.deviceId = opts.deviceId || "";
