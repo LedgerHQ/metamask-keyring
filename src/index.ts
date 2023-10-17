@@ -21,7 +21,7 @@ import {
 global.Buffer = require("buffer").Buffer;
 
 const hdPathString = `m/44'/60'/0'/0/0`;
-const type = "Ledger";
+const type = "Ledger Hardware";
 
 type SerializationOptions = {
   hdPath?: string;
