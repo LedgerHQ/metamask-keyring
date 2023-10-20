@@ -1,13 +1,14 @@
-import AppEth from "@ledgerhq/hw-app-eth";
+import AppEth, { ledgerService } from "@ledgerhq/hw-app-eth";
 import Transport from "@ledgerhq/hw-transport";
-import ledgerService from "@ledgerhq/hw-app-eth/lib/services/ledger";
 import { LedgerEthTransactionResolution } from "@ledgerhq/hw-app-eth/lib/services/types";
 import {
-  rlp,
   addHexPrefix,
   stripHexPrefix,
   toChecksumAddress,
-} from "ethereumjs-util";
+} from "@ethereumjs/util";
+import {
+  RLP
+} from "@ethereumjs/rlp";
 import { TransactionFactory, TypedTransaction } from "@ethereumjs/tx";
 import {
   MessageTypes,
@@ -17,8 +18,10 @@ import {
   TypedMessage,
 } from "eth-sig-util";
 
+// Needed as our libs require to use Buffer as transport.send() params and ethereumjs use TextEncoder
 // eslint-disable-next-line
 global.Buffer = require("buffer").Buffer;
+global.TextEncoder = require("util").TextEncoder;
 
 const hdPathString = `m/44'/60'/0'/0/0`;
 const type = "Ledger Hardware";
@@ -169,11 +172,9 @@ export default class LedgerKeyring {
     const hdPath = this._getHDPathFromAddress(address);
 
     // `getMessageToSign` will return valid RLP for all transaction types
-    const messageToSign = tx.getMessageToSign(false);
-
-    const rawTxHex = Buffer.isBuffer(messageToSign)
-      ? messageToSign.toString("hex")
-      : rlp.encode(messageToSign).toString("hex");
+    const messageToSign = tx.getMessageToSign();
+    const serializedMessage = RLP.encode(messageToSign); // use this for the HW wallet input
+    const rawTxHex = this._getHexString(serializedMessage);
 
     const resolution = await ledgerService.resolveTransaction(rawTxHex, {}, {});
 
@@ -387,5 +388,11 @@ export default class LedgerKeyring {
     }
 
     return account.hdPath;
+  };
+
+  private _getHexString = (bytes: Uint8Array): string => {
+    return Array.from(bytes)
+      .map((i) => i.toString(16).padStart(2, "0"))
+      .join("");
   };
 }
