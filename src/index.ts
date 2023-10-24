@@ -6,9 +6,7 @@ import {
   stripHexPrefix,
   toChecksumAddress,
 } from "@ethereumjs/util";
-import {
-  RLP
-} from "@ethereumjs/rlp";
+import { RLP } from "@ethereumjs/rlp";
 import { TransactionFactory, TypedTransaction } from "@ethereumjs/tx";
 import {
   MessageTypes,
@@ -22,6 +20,7 @@ import {
 // Needed as our libs require to use Buffer as transport.send() params and ethereumjs use TextEncoder
 // eslint-disable-next-line
 global.Buffer = require("buffer").Buffer;
+// eslint-disable-next-line
 global.TextEncoder = require("util").TextEncoder;
 
 const hdPathString = `m/44'/60'/0'/0/0`;
@@ -393,15 +392,4 @@ export default class LedgerKeyring {
 
     return account.hdPath;
   };
-
-  private _getHexString = (bytes: Uint8Array): string => {
-    return Array.from(bytes)
-      .map((i) => i.toString(16).padStart(2, "0"))
-      .join("");
-  };
-
-  private _getBytesFromHexString = (hexString: string): Uint8Array =>
-    Uint8Array.from(
-      hexString.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16))
-    );
 }
