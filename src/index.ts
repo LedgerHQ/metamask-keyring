@@ -13,10 +13,11 @@ import { TransactionFactory, TypedTransaction } from "@ethereumjs/tx";
 import {
   MessageTypes,
   recoverPersonalSignature,
-  recoverTypedSignature_v4,
+  recoverTypedSignature,
   TypedDataUtils,
   TypedMessage,
-} from "eth-sig-util";
+  SignTypedDataVersion,
+} from "@metamask/eth-sig-util";
 
 // Needed as our libs require to use Buffer as transport.send() params and ethereumjs use TextEncoder
 // eslint-disable-next-line
@@ -172,9 +173,11 @@ export default class LedgerKeyring {
     const hdPath = this._getHDPathFromAddress(address);
 
     // `getMessageToSign` will return valid RLP for all transaction types
-    const messageToSign = tx.getMessageToSign();
-    const serializedMessage = RLP.encode(messageToSign); // use this for the HW wallet input
-    const rawTxHex = this._getHexString(serializedMessage);
+    const messageToSign = tx.getMessageToSign(false);
+
+    const rawTxHex = Buffer.isBuffer(messageToSign)
+      ? messageToSign.toString("hex")
+      : Buffer.from(RLP.encode(messageToSign)).toString("hex");
 
     const resolution = await ledgerService.resolveTransaction(rawTxHex, {}, {});
 
@@ -255,7 +258,7 @@ export default class LedgerKeyring {
     const signature = `0x${r}${s}${modifiedV}`;
     const addressSignedWith = recoverPersonalSignature({
       data: message,
-      sig: signature,
+      signature: signature,
     });
 
     if (toChecksumAddress(addressSignedWith) !== toChecksumAddress(address)) {
@@ -287,14 +290,14 @@ export default class LedgerKeyring {
       "EIP712Domain",
       domain,
       types,
-      true
+      SignTypedDataVersion.V4
     ).toString("hex");
 
     const hashStructMessageHex = TypedDataUtils.hashStruct(
       primaryType as string,
       message,
       types,
-      true
+      SignTypedDataVersion.V4
     ).toString("hex");
 
     const hdPath = this._getHDPathFromAddress(address);
@@ -312,9 +315,10 @@ export default class LedgerKeyring {
 
     const signature = `0x${r}${s}${modifiedV}`;
 
-    const addressSignedWith = recoverTypedSignature_v4({
+    const addressSignedWith = recoverTypedSignature({
       data: JSON.parse(data) as TypedMessage<MessageTypes>,
-      sig: signature,
+      signature: signature,
+      version: SignTypedDataVersion.V4,
     });
     if (toChecksumAddress(addressSignedWith) !== toChecksumAddress(address)) {
       throw new Error("Ledger: The signature doesnt match the right address");
@@ -395,4 +399,9 @@ export default class LedgerKeyring {
       .map((i) => i.toString(16).padStart(2, "0"))
       .join("");
   };
+
+  private _getBytesFromHexString = (hexString: string): Uint8Array =>
+    Uint8Array.from(
+      hexString.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16))
+    );
 }
