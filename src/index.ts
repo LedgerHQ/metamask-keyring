@@ -1,12 +1,8 @@
-import AppEth, { ledgerService } from "@ledgerhq/hw-app-eth";
-import Transport from "@ledgerhq/hw-transport";
+import AppEth from "@ledgerhq/hw-app-eth";
+import type Transport from "@ledgerhq/hw-transport";
+import ledgerService from "@ledgerhq/hw-app-eth/lib/services/ledger";
 import { LedgerEthTransactionResolution } from "@ledgerhq/hw-app-eth/lib/services/types";
-import {
-  addHexPrefix,
-  stripHexPrefix,
-  toChecksumAddress,
-} from "@ethereumjs/util";
-import { RLP } from "@ethereumjs/rlp";
+import * as ethUtil from "ethereumjs-util";
 import { TransactionFactory, TypedTransaction } from "@ethereumjs/tx";
 import {
   MessageTypes,
@@ -17,25 +13,24 @@ import {
   SignTypedDataVersion,
 } from "@metamask/eth-sig-util";
 
-// Needed as our libs require to use Buffer as transport.send() params and ethereumjs use TextEncoder
 // eslint-disable-next-line
-global.Buffer = require("buffer").Buffer;
-// eslint-disable-next-line
-global.TextEncoder = require("util").TextEncoder;
+import { Buffer } from "buffer";
 
 const hdPathString = `m/44'/60'/0'/0/0`;
 const type = "Ledger Hardware";
 
-type SerializationOptions = {
+export type AccountDetails = {
+  bip44?: boolean;
   hdPath?: string;
-  accounts?: Account[];
-  deviceId?: string;
 };
 
-type Account = {
-  address: string;
-  hdPath: string;
+export type SerializationOptions = {
+  hdPath?: string;
+  accounts?: string[];
+  deviceId?: string;
+  accountDetails?: Record<string, AccountDetails>;
 };
+
 export interface EthereumApp {
   getAddress(
     path: string,
@@ -83,7 +78,7 @@ export default class LedgerKeyring {
 
   public deviceId = "";
 
-  public accounts: Account[] = [];
+  public accounts: string[] = [];
 
   private name: string;
 
@@ -92,6 +87,8 @@ export default class LedgerKeyring {
   private app?: EthereumApp;
 
   private transport?: Transport;
+
+  private accountDetails: Record<string, AccountDetails> = {};
 
   constructor(opts: SerializationOptions = {}) {
     this.name = "Ledger";
@@ -106,6 +103,7 @@ export default class LedgerKeyring {
     hdPath: this.hdPath,
     accounts: this.accounts,
     deviceId: this.deviceId,
+    accountDetails: this.accountDetails,
   });
 
   // eslint-disable-next-line @typescript-eslint/require-await
@@ -113,16 +111,17 @@ export default class LedgerKeyring {
     this.hdPath = opts.hdPath || hdPathString;
     this.accounts = opts.accounts || [];
     this.deviceId = opts.deviceId || "";
+    this.accountDetails = opts.accountDetails || {};
   };
 
   // eslint-disable-next-line @typescript-eslint/require-await
   getAccounts = async (): Promise<string[]> => {
-    const addresses = this.accounts.map(({ address }) => address);
-    return addresses;
+    return this.accounts.slice();
   };
 
   managesAccount = async (address: string): Promise<boolean> => {
     const accounts = await this.getAccounts();
+
     return accounts.some(
       (managedAddress) =>
         managedAddress.toLocaleLowerCase() === address.toLocaleLowerCase()
@@ -149,10 +148,12 @@ export default class LedgerKeyring {
       return this.getAccounts();
     }
 
-    this.accounts.push({
-      address,
+    const checksummedAddress = ethUtil.toChecksumAddress(address);
+    this.accounts.push(address);
+    this.accountDetails[checksummedAddress] = {
+      bip44: true,
       hdPath: this.hdPath,
-    });
+    };
 
     return this.getAccounts();
   };
@@ -176,12 +177,11 @@ export default class LedgerKeyring {
 
     const rawTxHex = Buffer.isBuffer(messageToSign)
       ? messageToSign.toString("hex")
-      : Buffer.from(RLP.encode(messageToSign)).toString("hex");
+      : ethUtil.rlp.encode(messageToSign).toString("hex");
 
     const resolution = await ledgerService.resolveTransaction(rawTxHex, {}, {});
 
     const { r, s, v } = await app.signTransaction(hdPath, rawTxHex, resolution);
-
     // Because tx will be immutable, first get a plain javascript object that
     // represents the transaction. Using txData here as it aligns with the
     // nomenclature of ethereumjs/tx.
@@ -191,10 +191,9 @@ export default class LedgerKeyring {
     txData.type = `0x${tx.type}`;
 
     // The fromTxData utility expects v,r and s to be hex prefixed
-    txData.v = addHexPrefix(v);
-    txData.r = addHexPrefix(r);
-    txData.s = addHexPrefix(s);
-
+    txData.v = ethUtil.addHexPrefix(v);
+    txData.r = ethUtil.addHexPrefix(r);
+    txData.s = ethUtil.addHexPrefix(s);
     // Adopt the 'common' option from the original transaction and set the
     // returned object to be frozen if the original is frozen.
     const transaction = TransactionFactory.fromTxData(txData, {
@@ -240,7 +239,7 @@ export default class LedgerKeyring {
 
   signPersonalMessage = async (address: string, message: string) => {
     const hdPath = this._getHDPathFromAddress(address);
-    const messageWithoutHexPrefix = stripHexPrefix(message);
+    const messageWithoutHexPrefix = ethUtil.stripHexPrefix(message);
 
     const app = this._getApp();
     const { r, s, v } = await app.signPersonalMessage(
@@ -260,7 +259,10 @@ export default class LedgerKeyring {
       signature: signature,
     });
 
-    if (toChecksumAddress(addressSignedWith) !== toChecksumAddress(address)) {
+    if (
+      ethUtil.toChecksumAddress(addressSignedWith) !==
+      ethUtil.toChecksumAddress(address)
+    ) {
       throw new Error("Ledger: The signature doesn't match the right address");
     }
 
@@ -319,7 +321,10 @@ export default class LedgerKeyring {
       signature: signature,
       version: SignTypedDataVersion.V4,
     });
-    if (toChecksumAddress(addressSignedWith) !== toChecksumAddress(address)) {
+    if (
+      ethUtil.toChecksumAddress(addressSignedWith) !==
+      ethUtil.toChecksumAddress(address)
+    ) {
       throw new Error("Ledger: The signature doesnt match the right address");
     }
 
@@ -328,6 +333,7 @@ export default class LedgerKeyring {
 
   forgetDevice = () => {
     this.accounts = [];
+    this.accountDetails = {};
     this.deviceId = "";
   };
 
@@ -382,14 +388,20 @@ export default class LedgerKeyring {
   };
 
   private _getHDPathFromAddress = (address: string): string => {
-    const account = this.accounts.find(({ address: accAddress }) => {
-      return accAddress.toLowerCase() === address.toLowerCase();
-    });
+    const checksummedAddress = ethUtil.toChecksumAddress(address);
 
-    if (!account) {
-      throw new Error(`Account not found for address: ${address}`);
+    // Check if the accountDetails object has the given address
+    if (!this.accountDetails.hasOwnProperty(checksummedAddress)) {
+      throw new Error(`Account details not found for address: ${address}`);
     }
 
-    return account.hdPath;
+    const details = this.accountDetails[checksummedAddress];
+
+    // Check if hdPath exists in the details for the given address
+    if (!details.hdPath) {
+      throw new Error(`HD Path not found for address: ${address}`);
+    }
+
+    return details.hdPath;
   };
 }
