@@ -175,7 +175,7 @@ export default class LedgerKeyring {
     // `getMessageToSign` will return valid RLP for all transaction types
     const messageToSign = tx.getMessageToSign(false);
 
-    const rawTxHex = Buffer.isBuffer(messageToSign)
+    const rawTxHex: string = Buffer.isBuffer(messageToSign)
       ? messageToSign.toString("hex")
       : ethUtil.rlp.encode(messageToSign).toString("hex");
 
@@ -239,7 +239,7 @@ export default class LedgerKeyring {
 
   signPersonalMessage = async (address: string, message: string) => {
     const hdPath = this._getHDPathFromAddress(address);
-    const messageWithoutHexPrefix = ethUtil.stripHexPrefix(message);
+    const messageWithoutHexPrefix: string = ethUtil.stripHexPrefix(message);
 
     const app = this._getApp();
     const { r, s, v } = await app.signPersonalMessage(
@@ -338,6 +338,7 @@ export default class LedgerKeyring {
   };
 
   setTransport = (transport: Transport, deviceId: string) => {
+    console.log(`Keyring::setTransport => Device ID : ${deviceId}`);
     if (this.deviceId && this.deviceId !== deviceId) {
       throw new Error("LedgerKeyring: deviceId mismatch.");
     }
@@ -352,7 +353,11 @@ export default class LedgerKeyring {
   };
 
   openEthApp = (): Promise<Buffer> => {
+    console.log(`Keyring::openEthApp => Called`);
     if (!this.transport) {
+      console.log(
+        `Keyring::openEthApp:Error => Ledger transport is not initialized. You must call setTransport first.`
+      );
       throw new Error(
         "Ledger transport is not initialized. You must call setTransport first."
       );
@@ -368,7 +373,11 @@ export default class LedgerKeyring {
   };
 
   quitApp = (): Promise<Buffer> => {
+    console.log(`Keyring::quitApp Called`);
     if (!this.transport) {
+      console.log(
+        `Keyring::quitApp:Error => Ledger transport is not initialized. You must call setTransport first.`
+      );
       throw new Error(
         "Ledger transport is not initialized. You must call setTransport first."
       );
@@ -378,6 +387,8 @@ export default class LedgerKeyring {
   };
 
   private _getApp = (): EthereumApp => {
+    console.log(`Keyring::_getApp Called`);
+
     if (!this.app) {
       throw new Error(
         "Ledger app is not initialized. You must call setTransport first."
