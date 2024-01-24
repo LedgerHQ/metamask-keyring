@@ -1,6 +1,6 @@
 {
   "name": "@ledgerhq/metamask-keyring",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "A Metamask keyring implementation to bridge wallet operatations with Ledger Nano devices.",
   "repository": "git@github.com:LedgerHQ/metamask-keyring.git",
   "license": "Apache-2.0",
@@ -19,22 +19,25 @@
     "test": "jest"
   },
   "devDependencies": {
+    "@ledgerhq/hw-transport": "^6.24.1",
     "@types/jest": "^27.4.1",
     "@typescript-eslint/eslint-plugin": "^5.15.0",
     "@typescript-eslint/parser": "^5.15.0",
     "eslint": "^8.11.0",
     "eslint-config-airbnb-typescript": "^16.1.3",
-    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-import": "^2.25.4",
-    "eslint-plugin-jest": "^26.1.1",
+    "eslint-plugin-jest": "^27.6.0",
     "eslint-plugin-prettier": "^4.0.0",
-    "husky": "^7.0.4",
+    "husky": "^8.0.3",
     "jest": "^27.5.1",
-    "lint-staged": "^12.3.6",
+    "lint-staged": "^15.1.0",
     "prettier": "^2.6.0",
     "ts-jest": "^27.1.3",
     "ts-node": "^10.7.0",
-    "typescript": "^4.6.2"
+    "tsc": "^2.0.4",
+    "typescript": "^4.6.2",
+    "axios": "1.6.0"
   },
   "lint-staged": {
     "*.ts": "yarn run lint:fix"
@@ -42,9 +45,11 @@
   "dependencies": {
     "@ethereumjs/tx": "^3.5.0",
     "@ledgerhq/hw-app-eth": "6.26.1",
-    "@ledgerhq/hw-transport": "6.24.1",
+    "@metamask/eth-sig-util": "^7.0.0",
     "buffer": "^6.0.3",
-    "eth-sig-util": "^3.0.1",
-    "ethereumjs-util": "^7.1.4"
+    "ethereumjs-util": "^7.1.5"
+  },
+  "resolutions": {
+    "axios": "1.6.0"
   }
 }
